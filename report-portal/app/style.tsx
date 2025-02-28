@@ -1,7 +1,6 @@
 import styled, { keyframes } from 'styled-components';
 import { IoFilter } from 'react-icons/io5';
 
-// Enhanced animations
 const fadeIn = keyframes`
   0% { opacity: 0; }
   100% { opacity: 1; }
@@ -12,20 +11,17 @@ const slideUp = keyframes`
   100% { transform: translateY(0); opacity: 1; }
 `;
 
-// Pulse animation
 const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
 `;
 
-// Rotation animation for the filter icon
 const rotate = keyframes`
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 `;
 
-// Shimmer effect for buttons
 const shimmer = keyframes`
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
