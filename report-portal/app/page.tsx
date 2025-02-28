@@ -37,7 +37,7 @@ function MiniNav() {
         <Styled.LogoContainer>
           
           <Image 
-            src="/app/logo.png" 
+            src="/logo.png" 
             alt="Logo" 
             width={60} 
             height={60}
