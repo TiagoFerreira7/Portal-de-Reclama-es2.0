@@ -1,6 +1,5 @@
 import styled, { keyframes } from 'styled-components';
 
-// EXISTING ANIMATIONS
 const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
@@ -68,7 +67,6 @@ const scaleUpDown = keyframes`
   100% { transform: scale(1); }
 `;
 
-// EXISTING FAQ ANIMATIONS
 const expandCollapse = keyframes`
   0% { max-height: 0; opacity: 0; }
   100% { max-height: 500px; opacity: 1; }
@@ -85,7 +83,6 @@ const borderWave = keyframes`
   100% { border-radius: 5px; }
 `;
 
-// NEW ANIMATIONS
 const fadeIn = keyframes`
   from { 
     opacity: 0; 
@@ -263,7 +260,7 @@ export const SubmitButton = styled.button`
   transition: all 0.3s ease;
   animation: ${fadeIn} 0.8s ease-out forwards;
   animation-delay: 0.7s;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to 1 */
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -298,6 +295,7 @@ export const SubmitButton = styled.button`
     background-color: #cccccc;
     cursor: not-allowed;
     animation: none;
+    opacity: 0.7; /* Added to ensure visibility even when disabled */
   }
 
   @keyframes shimmerEffect {
@@ -308,7 +306,7 @@ export const SubmitButton = styled.button`
       transform: translateX(50%);
     }
   }
-`;
+`; 
 
 export const FileUploadContainer = styled.div`
   display: flex;
@@ -549,7 +547,6 @@ export const CategorySelect = styled.select`
   }
 `;
 
-// ANIMATED COMPONENTS
 export const SuccessMessage = styled.div`
   padding: 15px;
   background-color: #d4edda;
@@ -673,7 +670,6 @@ export const FloatingLabel = styled.div`
   }
 `;
 
-// ENHANCED FAQ COMPONENTS
 export const FaqContainer = styled.div`
   width: 100%;
   margin: 20px 0;
