@@ -42,7 +42,6 @@ export default function ComplaintForm() {
   ];
   const maxFileSize = 10 * 1024 * 1024;
 
-  // FAQ items
   const faqItems = [
     {
       question: "Como posso acompanhar minha reclamação?",
@@ -66,7 +65,6 @@ export default function ComplaintForm() {
     }
   ];
 
-  // Toggle FAQ item
   const toggleFaq = (index: number) => {
     if (activeFaqItem === index) {
       setActiveFaqItem(null);
@@ -75,7 +73,6 @@ export default function ComplaintForm() {
     }
   };
 
-  // Load form data from localStorage on initial render
   useEffect(() => {
     const savedFormData = localStorage.getItem('complaintFormData');
     if (savedFormData) {
@@ -83,7 +80,6 @@ export default function ComplaintForm() {
         const parsedData = JSON.parse(savedFormData);
         setFormData(parsedData);
         
-        // Load people list if available
         if (parsedData.peopleList && Array.isArray(parsedData.peopleList)) {
           setPeopleList(parsedData.peopleList);
         }
@@ -94,7 +90,6 @@ export default function ComplaintForm() {
     }
   }, []);
 
-  // Save form data to localStorage whenever it changes
   useEffect(() => {
     const dataToSave = {
       ...formData,
@@ -103,17 +98,15 @@ export default function ComplaintForm() {
     localStorage.setItem('complaintFormData', JSON.stringify(dataToSave));
   }, [formData, peopleList]);
 
-  // Enhanced sanitization for XSS protection
   const sanitizeInput = (input: string): string => {
-    // First use DOMPurify to sanitize HTML
     const purified = DOMPurify.sanitize(input);
     
-    // Additional sanitization for SQL injection prevention
+   
     return purified
-      .replace(/'/g, "''") // Escape single quotes for SQL
-      .replace(/\\/g, "\\\\") // Escape backslashes
-      .replace(/\u0000/g, "") // Remove null bytes
-      .replace(/\u001a/g, ""); // Remove substitute character
+      .replace(/'/g, "''") 
+      .replace(/\\/g, "\\\\") 
+      .replace(/\u0000/g, "") 
+      .replace(/\u001a/g, ""); 
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -123,7 +116,6 @@ export default function ComplaintForm() {
       const { checked } = e.target as HTMLInputElement;
       setFormData({ ...formData, [name]: checked });
     } else if (type === 'file') {
-      // Handled by handleFileChange
     } else {
       const sanitizedValue = sanitizeInput(value);
       setFormData({ ...formData, [name]: sanitizedValue });
@@ -138,19 +130,16 @@ export default function ComplaintForm() {
     const newFiles: File[] = [...files];
 
     Array.from(selectedFiles).forEach(file => {
-      // Validate file type
       if (!allowedFileTypes.includes(file.type)) {
         newErrors.push(`${file.name}: Tipo de arquivo não permitido`);
         return;
       }
       
-      // Validate file size
       if (file.size > maxFileSize) {
         newErrors.push(`${file.name}: Tamanho excede 10MB`);
         return;
       }
       
-      // Validate file name for security
       const sanitizedFileName = sanitizeInput(file.name);
       if (sanitizedFileName !== file.name) {
         newErrors.push(`${file.name}: Nome de arquivo contém caracteres não permitidos`);
@@ -163,7 +152,7 @@ export default function ComplaintForm() {
     setFiles(newFiles);
     setFileErrors(newErrors);
 
-    e.target.value = ''; // Clear input after processing
+    e.target.value = ''; 
   };
 
   const removeFile = (index: number) => {
@@ -202,7 +191,6 @@ export default function ComplaintForm() {
     return null;
   };
 
-  // Handler for adding people tags
   const handlePeopleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && formData.otherPeople.trim() !== '') {
       e.preventDefault();
@@ -214,7 +202,7 @@ export default function ComplaintForm() {
     }
   };
 
-  // Function to add a person from the input field
+
   const addPerson = () => {
     if (formData.otherPeople.trim() !== '') {
       const newPerson = sanitizeInput(formData.otherPeople.trim());
@@ -225,7 +213,6 @@ export default function ComplaintForm() {
     }
   };
 
-  // Remove a person from the list
   const removePerson = (index: number) => {
     const newPeopleList = [...peopleList];
     newPeopleList.splice(index, 1);
@@ -257,8 +244,8 @@ export default function ComplaintForm() {
   };
 
   const validateEmail = (email: string): boolean => {
-    // Basic email validation
-    if (!email) return true; // Email is optional
+
+    if (!email) return true;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
@@ -266,8 +253,7 @@ export default function ComplaintForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const today = new Date().toISOString().split('T')[0];
-
-    // Validate required fields
+  
     for (const [key, value] of Object.entries(formData)) {
       if (requiredFields.has(key)) {
         if (value === '' || value === null) {
@@ -279,37 +265,35 @@ export default function ComplaintForm() {
         }
       }
     }
-
+  
     // Validate email format if provided
     if (formData.email && !validateEmail(formData.email)) {
       alert('O formato do email é inválido.');
       return;
     }
-
+  
     // Validate date range
     if (formData.dateFrom > formData.dateTo) {
       alert('A data de início não pode ser posterior à data de fim.');
       return;
     }
-
+  
     // Validate dates are not in the future
     if (formData.dateFrom > today || formData.dateTo > today) {
       alert('As datas não podem ser futuras.');
       return;
     }
-
-    // Validate checkboxes for terms and privacy policy
+  
     if (!formData.checkbox1 || !formData.checkbox2) {
       alert('Você precisa aceitar os termos e a política de privacidade.');
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       const formDataWithFiles = new FormData();
       
-      // Append sanitized form data
       Object.entries(formData).forEach(([key, value]) => {
         const sanitizedValue = typeof value === 'string' 
           ? sanitizeInput(value) 
@@ -317,32 +301,49 @@ export default function ComplaintForm() {
         formDataWithFiles.append(key, sanitizedValue);
       });
       
-      // Append people list
       formDataWithFiles.append('peopleList', JSON.stringify(peopleList));
       
-      // Append files with sanitized names
       files.forEach((file, index) => {
         formDataWithFiles.append(`file-${index}`, file);
       });
-
+  
       console.log("Form data:", formData);
       console.log("People list:", peopleList);
       console.log("Files:", files);
       
-      // Simulate form submission success
-      setTimeout(() => {
-        // Clear form data from localStorage after successful submission
-        localStorage.removeItem('complaintFormData');
-        router.push('/success');
-      }, 1000);
+      const complaintId = `REC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
       
+      const processedFiles = files.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: URL.createObjectURL(file) 
+      }));
+      
+      const complaintData = {
+        id: complaintId,
+        ...formData,
+        peopleList: peopleList,
+        files: processedFiles,
+        status: 'new',
+        submittedAt: new Date().toISOString()
+      };
+      
+      const existingComplaints = localStorage.getItem('submittedComplaints');
+      const complaintsArray = existingComplaints ? JSON.parse(existingComplaints) : [];
+      complaintsArray.push(complaintData);
+      localStorage.setItem('submittedComplaints', JSON.stringify(complaintsArray));
+      
+      localStorage.removeItem('complaintFormData');
+
+      router.push('/success');
+        
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsSubmitting(false);
     }
   };
 
-  // Handle beforeunload event to warn users before leaving page
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const formHasData = Object.values(formData).some(value => {
@@ -493,11 +494,11 @@ export default function ComplaintForm() {
                 placeholder="Descreva sua reclamação" 
                 style={{ 
                   fontFamily: 'Arial, sans-serif',
-                  resize: 'vertical', // Allow vertical resizing only
+                  resize: 'vertical', 
                   minHeight: '120px',
-                  boxSizing: 'border-box', // Ensure padding is included in width/height
-                  width: '100%', // Ensure full width
-                  maxWidth: '100%' // Prevent horizontal overflow
+                  boxSizing: 'border-box', 
+                  width: '100%', 
+                  maxWidth: '100%' 
                 }} 
                 maxLength={2000}
               />
@@ -746,7 +747,6 @@ export default function ComplaintForm() {
         </form>
       </FormContainer>
 
-      {/* FAQ Section */}
       <div className="faq-container" style={{
         flex: '1 1 35%',
         backgroundColor: '#f9fafb',
