@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaUser, FaEnvelope, FaClipboardList, FaCalendarAlt, FaUsers, FaChevronDown, FaChevronUp, FaQuestionCircle } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaClipboardList, FaCalendarAlt, FaUsers, FaChevronDown, FaChevronUp, FaQuestionCircle, FaArrowLeft } from "react-icons/fa";
 import { MdDescription, MdAttachFile, MdCategory, MdSend, MdClose, MdAdd } from "react-icons/md";
 import { FormContainer, FormTitle, FormSection, SectionTitle, FormGroup, Label, Input, Textarea, SubmitButton, FileUploadContainer, FileUploadInfo, FileInputLabel, FilePreviewCard, FileInfo, FileName, FileSize, RemoveFileButton, FileErrors, ErrorMessage, CheckboxGroup, CheckboxLabel, CategorySelect } from './style';
 import DOMPurify from 'dompurify';
@@ -71,6 +71,10 @@ export default function ComplaintForm() {
     } else {
       setActiveFaqItem(index);
     }
+  };
+
+  const handleGoBack = () => {
+    router.back();
   };
 
   useEffect(() => {
@@ -383,9 +387,36 @@ export default function ComplaintForm() {
         flex: '1 1 65%',
         maxWidth: '800px',
         overflow: 'auto',
-        height: 'fit-content'
+        height: 'fit-content',
+        position: 'relative'
       }}>
-        <FormTitle>Formulário de Reclamação</FormTitle>
+        <button 
+          onClick={handleGoBack}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            color: '#4a6fa5',
+            fontWeight: '500',
+            fontSize: '14px',
+            padding: '8px 12px',
+            borderRadius: '4px',
+            transition: 'background-color 0.2s',
+            zIndex: 5
+          }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <FaArrowLeft /> Voltar
+        </button>
+        
+        <FormTitle style={{ marginTop: '40px' }}>Formulário de Reclamação</FormTitle>
         
         <form onSubmit={handleSubmit}>
           <FormSection>
