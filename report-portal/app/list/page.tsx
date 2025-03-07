@@ -1,63 +1,108 @@
-'use client'
+"use client";
 import { useState, useEffect } from "react";
-import { Complaint, ComplaintList, ComplaintItem, ComplaintHeader, NoComplaints, DetailView, DetailSection, DetailHeader, DetailField, DetailLabel, DetailValue, BackButton, FilePreview, StatusBadge, HomeButton } from './style';
-import { FaUser, FaEnvelope, FaClipboardList, FaCalendarAlt, FaUsers, FaChevronLeft, FaHome } from "react-icons/fa";
-import { MdDescription, MdAttachFile, MdCategory } from "react-icons/md";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { FaUser, FaEnvelope, FaClipboardList, FaCalendarAlt, FaUsers, FaChevronLeft, FaSearch, FaTimes, FaFilter, } from "react-icons/fa";
+import { MdDescription, MdAttachFile, MdCategory } from "react-icons/md";
+import { PageContainer, ComplaintHeader, ComplaintList, ComplaintItem, NoComplaints, DetailView, DetailSection, DetailHeader, DetailField, DetailLabel, DetailValue, BackButton, FilePreview, SearchContainer, SearchInput, SearchButton, ClearSearchButton, SearchInfo, ComplaintDetailOverlay, ComplaintDetailContainer, ListColumn, Header as StyledHeader, LogoContainer, HeaderTitle, NavLinks, NavLink, FilterIcon, Icon, ComplaintListHeader, } from "./style";
+import { ComplaintData, FileData } from "../../types";
 
-interface ComplaintData {
-  id?: string;
-  name: string;
-  email: string;
-  category: string;
-  productIssue?: string;
-  complaintSubject: string;
-  description: string;
-  dateFrom: string;
-  dateTo: string;
-  timeFrom: string;
-  timeTo: string;
-  peopleList: string[];
-  files?: FileData[];
-  status?: 'new' | 'in-progress' | 'resolved' | 'closed';
-  submittedAt?: string;
-}
+function HeaderComponent() {
+  const router = useRouter();
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/report", label: "Criar Reclamação" },
+    { href: "/list", label: "Listagem" },
+  ];
 
-interface FileData {
-  name: string;
-  size: number;
-  type: string;
-  url: string;
+  return (
+    <StyledHeader>
+      <LogoContainer>
+        <Image
+          src="/logo.png"
+          alt="Logo"
+          width={50}
+          height={50}
+          priority={true}
+        />
+        <HeaderTitle>INSERTPAGE</HeaderTitle>
+      </LogoContainer>
+
+      <NavLinks>
+        {navLinks.map((link) => (
+          <Link key={link.href} href={link.href} passHref legacyBehavior>
+            <NavLink>{link.label}</NavLink>
+          </Link>
+        ))}
+      </NavLinks>
+
+      <FilterIcon>
+        <Icon />
+      </FilterIcon>
+    </StyledHeader>
+  );
 }
 
 export default function ComplaintListPage() {
   const [complaints, setComplaints] = useState<ComplaintData[]>([]);
-  const [selectedComplaint, setSelectedComplaint] = useState<ComplaintData | null>(null);
+  const [filteredComplaints, setFilteredComplaints] = useState<ComplaintData[]>(
+    []
+  );
+  const [selectedComplaint, setSelectedComplaint] =
+    useState<ComplaintData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchName, setSearchName] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [isSearched, setIsSearched] = useState(false);
 
-  useEffect(() => {
-    const fetchComplaints = () => {
-      setLoading(true);
-      
-      try {
-        const savedComplaints = localStorage.getItem('submittedComplaints');
-        
-        if (savedComplaints) {
-          const parsedComplaints = JSON.parse(savedComplaints);
-          setComplaints(parsedComplaints);
-        } else {
-          setComplaints([]);
-        }
-      } catch (error) {
-        console.error("Error loading complaints:", error);
+  const fetchComplaints = () => {
+    setLoading(true);
+
+    try {
+      const savedComplaints = localStorage.getItem("submittedComplaints");
+
+      if (savedComplaints) {
+        const parsedComplaints = JSON.parse(savedComplaints);
+        setComplaints(parsedComplaints);
+        setFilteredComplaints(parsedComplaints);
+      } else {
         setComplaints([]);
-      } finally {
-        setLoading(false);
+        setFilteredComplaints([]);
       }
-    };
+    } catch (error) {
+      console.error("Error loading complaints:", error);
+      setComplaints([]);
+      setFilteredComplaints([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchComplaints();
-  }, []);
+  const handleSearch = () => {
+    setIsSearched(true);
+    const filtered = complaints.filter(
+      (complaint) =>
+        (!searchName ||
+          complaint.name.toLowerCase().includes(searchName.toLowerCase())) &&
+        (!searchEmail ||
+          complaint.email.toLowerCase().includes(searchEmail.toLowerCase()))
+    );
+    setFilteredComplaints(filtered);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const resetSearch = () => {
+    setSearchName("");
+    setSearchEmail("");
+    setFilteredComplaints(complaints);
+    setIsSearched(false);
+  };
 
   const handleComplaintClick = (complaint: ComplaintData) => {
     setSelectedComplaint(complaint);
@@ -67,243 +112,246 @@ export default function ComplaintListPage() {
     setSelectedComplaint(null);
   };
 
-  // Format the datetime
   const formatDateTime = (date: string, time: string) => {
     return `${date} às ${time}`;
   };
 
-  const getStatusLabel = (status: string) => {
-    switch(status) {
-      case 'new': return 'Nova';
-      case 'in-progress': return 'Em Análise';
-      case 'resolved': return 'Resolvida';
-      case 'closed': return 'Encerrada';
-      default: return 'Nova';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'new': return '#3498db';
-      case 'in-progress': return '#f39c12';
-      case 'resolved': return '#2ecc71';
-      case 'closed': return '#7f8c8d';
-      default: return '#3498db';
-    }
-  };
-
   const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' bytes';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " bytes";
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+    else return (bytes / 1048576).toFixed(1) + " MB";
   };
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
 
   if (loading) {
     return <div className="loading">Carregando reclamações...</div>;
   }
 
   return (
-    <div className="complaint-page-container" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <Link href="/" passHref>
-          <HomeButton>
-            <FaHome /> Voltar à Página Inicial
-          </HomeButton>
-        </Link>
-      </div>
+    <PageContainer>
+      <HeaderComponent />
+      <ListColumn hasSelectedComplaint={!!selectedComplaint}>
+        <ComplaintHeader>
+          <h1>Lista de Reclamações</h1>
 
-      {selectedComplaint ? (
-        <DetailView>
-          <BackButton onClick={backToList}>
-            <FaChevronLeft /> Voltar para a lista
-          </BackButton>
-          
-          <DetailHeader>
-            <h1 style={{ fontSize: '28px' }}>Reclamação: {selectedComplaint.id || 'ID não atribuído'}</h1>
-            {selectedComplaint.status && (
-              <StatusBadge 
-                style={{ 
-                  backgroundColor: getStatusColor(selectedComplaint.status),
-                  padding: '8px 16px',
-                  fontSize: '14px'
-                }}
-              >
-                {getStatusLabel(selectedComplaint.status || 'new')}
-              </StatusBadge>
+          <SearchContainer>
+            <SearchInput
+              type="text"
+              placeholder="Buscar por Nome"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <SearchInput
+              type="text"
+              placeholder="Buscar por Email"
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            <SearchButton onClick={handleSearch}>
+              <FaSearch /> Pesquisar
+            </SearchButton>
+            {isSearched && (
+              <ClearSearchButton onClick={resetSearch}>
+                <FaTimes /> Limpar
+              </ClearSearchButton>
             )}
-          </DetailHeader>
-          
-          <DetailSection>
-            <h2 style={{ fontSize: '24px' }}>
-              <FaClipboardList /> Assunto da Reclamação
-            </h2>
-            <p style={{ fontSize: '20px', fontWeight: '500' }}>{selectedComplaint.complaintSubject}</p>
-          </DetailSection>
-          
-          <DetailSection>
-            <h2 style={{ fontSize: '24px' }}>
-              <FaUser /> Informações Pessoais
-            </h2>
-            <DetailField>
-              <DetailLabel style={{ fontSize: '18px' }}>Nome:</DetailLabel>
-              <DetailValue style={{ fontSize: '18px' }}>{selectedComplaint.name || 'Não informado'}</DetailValue>
-            </DetailField>
-            <DetailField>
-              <DetailLabel style={{ fontSize: '18px' }}>Email:</DetailLabel>
-              <DetailValue style={{ fontSize: '18px' }}>{selectedComplaint.email || 'Não informado'}</DetailValue>
-            </DetailField>
-          </DetailSection>
-          
-          <DetailSection>
-            <h2 style={{ fontSize: '24px' }}>
-              <MdCategory /> Classificação
-            </h2>
-            <DetailField>
-              <DetailLabel style={{ fontSize: '18px' }}>Categoria:</DetailLabel>
-              <DetailValue style={{ fontSize: '18px' }}>
-                {selectedComplaint.category === 'produto' ? 'Produto' : 
-                 selectedComplaint.category === 'servico' ? 'Serviço' : 
-                 selectedComplaint.category === 'atendimento' ? 'Atendimento' : 
-                 selectedComplaint.category}
-              </DetailValue>
-            </DetailField>
-            {selectedComplaint.productIssue && (
-              <DetailField>
-                <DetailLabel style={{ fontSize: '18px' }}>Problema do Produto:</DetailLabel>
-                <DetailValue style={{ fontSize: '18px' }}>
-                  {selectedComplaint.productIssue === 'defeito' ? 'Produto com defeito' : 
-                   selectedComplaint.productIssue === 'estragado/partido' ? 'Produto estragado/partido' : 
-                   selectedComplaint.productIssue === 'atraso' ? 'Produto atrasado na entrega' : 
-                   selectedComplaint.productIssue === 'errado' ? 'Produto errado/diferente do negociado' : 
-                   selectedComplaint.productIssue === 'incompleto' ? 'Produto incompleto' : 
-                   selectedComplaint.productIssue}
-                </DetailValue>
-              </DetailField>
-            )}
-          </DetailSection>
-          
-          <DetailSection>
-            <h2 style={{ fontSize: '24px' }}>
-              <MdDescription /> Descrição
-            </h2>
-            <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '18px' }}>{selectedComplaint.description}</p>
-          </DetailSection>
-          
-          <DetailSection>
-            <h2 style={{ fontSize: '24px' }}>
-              <FaCalendarAlt /> Período da Reclamação
-            </h2>
-            <DetailField>
-              <DetailLabel style={{ fontSize: '18px' }}>De:</DetailLabel>
-              <DetailValue style={{ fontSize: '18px' }}>{formatDateTime(selectedComplaint.dateFrom, selectedComplaint.timeFrom)}</DetailValue>
-            </DetailField>
-            <DetailField>
-              <DetailLabel style={{ fontSize: '18px' }}>Até:</DetailLabel>
-              <DetailValue style={{ fontSize: '18px' }}>{formatDateTime(selectedComplaint.dateTo, selectedComplaint.timeTo)}</DetailValue>
-            </DetailField>
-          </DetailSection>
-          
-          {selectedComplaint.peopleList && selectedComplaint.peopleList.length > 0 && (
-            <DetailSection>
-              <h2 style={{ fontSize: '24px' }}>
-                <FaUsers /> Pessoas Envolvidas
-              </h2>
-              <ul style={{ paddingLeft: '20px', fontSize: '18px' }}>
-                {selectedComplaint.peopleList.map((person, index) => (
-                  <li key={index}>{person}</li>
-                ))}
-              </ul>
-            </DetailSection>
-          )}
-          
-        
-          {selectedComplaint.files && selectedComplaint.files.length > 0 && (
-  <DetailSection>
-    <h2><MdAttachFile /> Arquivos Anexados</h2>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-      {selectedComplaint.files.map((file, index) => (
-        <FilePreview key={index}>
-          {file.type.startsWith('image/') ? (
-            <a href={file.url} target="_blank" rel="noopener noreferrer">
-              <img src={file.url} alt={file.name} style={{ maxWidth: '150px', maxHeight: '120px' }} />
-            </a>
-          ) : (
-            <div className="file-icon"><MdAttachFile size={50} /></div>
-          )}
-          <div className="file-info">
-            <div className="file-name">{file.name}</div>
-            <div className="file-size">{formatFileSize(file.size)}</div>
-          </div>
-        </FilePreview>
-      ))}
-    </div>
-  </DetailSection>
-)}
+          </SearchContainer>
 
-          
-          {selectedComplaint.submittedAt && (
-            <DetailSection style={{ fontSize: '16px', color: '#666' }}>
-              <DetailField>
-                <DetailLabel>Data de Submissão:</DetailLabel>
-                <DetailValue>{new Date(selectedComplaint.submittedAt).toLocaleString()}</DetailValue>
-              </DetailField>
-            </DetailSection>
+          {isSearched && filteredComplaints.length > 0 && (
+            <SearchInfo>
+              {filteredComplaints.length} reclamaç
+              {filteredComplaints.length !== 1 ? "ões" : ""} encontrada
+              {filteredComplaints.length !== 1 ? "s" : ""}
+            </SearchInfo>
           )}
-        </DetailView>
-      ) : (
-        <>
-          <ComplaintHeader>
-            <h1 style={{ fontSize: '30px' }}>Lista de Reclamações</h1>
-          </ComplaintHeader>
-          
-          {complaints.length === 0 ? (
+
+          {filteredComplaints.length === 0 ? (
             <NoComplaints>
-              <p style={{ fontSize: '18px' }}>Nenhuma reclamação encontrada.</p>
-              <p style={{ fontSize: '18px' }}>Utilize o formulário de reclamação para registrar uma nova reclamação.</p>
+              <p>Nenhuma reclamação encontrada.</p>
+              <p>
+                {isSearched
+                  ? "Tente ajustar seus critérios de pesquisa."
+                  : "Utilize o formulário de reclamação para registrar uma nova reclamação."}
+              </p>
             </NoComplaints>
           ) : (
             <ComplaintList>
-              {complaints.map((complaint, index) => (
-                <ComplaintItem 
-                  key={index} 
+              <ComplaintListHeader>
+                <div className="header-name">Nome</div>
+                <div className="header-email">Email</div>
+                <div className="header-category">Categoria</div>
+                <div className="header-subject">Assunto</div>
+                <div className="header-date">Data</div>
+              </ComplaintListHeader>
+              {filteredComplaints.map((complaint, index) => (
+                <ComplaintItem
+                  key={index}
                   onClick={() => handleComplaintClick(complaint)}
-                  style={{ 
-                    padding: '18px', 
-                    marginBottom: '15px',
-                    height: 'auto',
-                    minHeight: '80px'
-                  }}
                 >
-                  <div className="complaint-id" style={{ fontSize: '18px', fontWeight: 'bold' }}>{complaint.id || `REC-${index + 1}`}</div>
-                  <div className="complaint-subject" style={{ fontSize: '18px', fontWeight: '500', flex: '2' }}>{complaint.complaintSubject}</div>
-                  <div className="complaint-category" style={{ fontSize: '16px' }}>
-                    <span>
-                      {complaint.category === 'produto' ? 'Produto' : 
-                       complaint.category === 'servico' ? 'Serviço' : 
-                       complaint.category === 'atendimento' ? 'Atendimento' : 
-                       complaint.category}
-                    </span>
+                  <div className="complaint-name">
+                    {complaint.name ? (
+                      complaint.name
+                    ) : (
+                      <span className="not-informed">Não informado</span>
+                    )}
                   </div>
-               
-                  {complaint.status && (
-                    <div className="complaint-status">
-                      <span style={{ 
-                        backgroundColor: getStatusColor(complaint.status),
-                        color: '#fff',
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        fontSize: '14px'
-                      }}>
-                        {getStatusLabel(complaint.status)}
-                      </span>
-                    </div>
-                  )}
+                  <div className="complaint-email">
+                    {complaint.email ? (
+                      complaint.email
+                    ) : (
+                      <span className="not-informed">Não informado</span>
+                    )}
+                  </div>
+                  <div className="complaint-category">{complaint.category}</div>
+                  <div className="complaint-subject">
+                    {complaint.complaintSubject}
+                  </div>
+                  <div className="complaint-date">
+                    {formatDateTime(complaint.dateFrom, complaint.timeFrom)}
+                  </div>
                 </ComplaintItem>
               ))}
             </ComplaintList>
           )}
-        </>
+        </ComplaintHeader>
+      </ListColumn>
+
+      {selectedComplaint && (
+        <ComplaintDetailOverlay
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              backToList();
+            }
+          }}
+        >
+          <ComplaintDetailContainer>
+            <BackButton onClick={backToList}>
+              <FaChevronLeft /> Voltar para a lista
+            </BackButton>
+            <DetailView>
+              <DetailHeader>
+                <h2>Detalhes da Reclamação</h2>
+              </DetailHeader>
+
+              <DetailSection>
+                <h3>
+                  <FaUser /> Informações Pessoais
+                </h3>
+                <DetailField>
+                  <DetailLabel>Nome:</DetailLabel>
+                  <DetailValue>
+                    {selectedComplaint.name || "Não informado"}
+                  </DetailValue>
+                </DetailField>
+                <DetailField>
+                  <DetailLabel>Email:</DetailLabel>
+                  <DetailValue>
+                    {selectedComplaint.email || "Não informado"}
+                  </DetailValue>
+                </DetailField>
+              </DetailSection>
+
+              <DetailSection>
+                <h3>
+                  <MdCategory /> Classificação
+                </h3>
+                <DetailField>
+                  <DetailLabel>Categoria:</DetailLabel>
+                  <DetailValue>{selectedComplaint.category}</DetailValue>
+                </DetailField>
+                {selectedComplaint.productIssue && (
+                  <DetailField>
+                    <DetailLabel>Problema do Produto:</DetailLabel>
+                    <DetailValue>{selectedComplaint.productIssue}</DetailValue>
+                  </DetailField>
+                )}
+              </DetailSection>
+
+              <DetailSection>
+                <h3>
+                  <FaClipboardList /> Detalhes da Reclamação
+                </h3>
+                <DetailField>
+                  <DetailLabel>Tema:</DetailLabel>
+                  <DetailValue>
+                    {selectedComplaint.complaintSubject}
+                  </DetailValue>
+                </DetailField>
+                <DetailField>
+                  <DetailLabel>Descrição:</DetailLabel>
+                  <DetailValue>{selectedComplaint.description}</DetailValue>
+                </DetailField>
+              </DetailSection>
+
+              <DetailSection>
+                <h3>
+                  <FaCalendarAlt /> Período da Ocorrência
+                </h3>
+                <DetailField>
+                  <DetailLabel>De:</DetailLabel>
+                  <DetailValue>
+                    {formatDateTime(
+                      selectedComplaint.dateFrom,
+                      selectedComplaint.timeFrom
+                    )}
+                  </DetailValue>
+                </DetailField>
+                <DetailField>
+                  <DetailLabel>Até:</DetailLabel>
+                  <DetailValue>
+                    {formatDateTime(
+                      selectedComplaint.dateTo,
+                      selectedComplaint.timeTo
+                    )}
+                  </DetailValue>
+                </DetailField>
+              </DetailSection>
+
+              {selectedComplaint.peopleList &&
+                selectedComplaint.peopleList.length > 0 && (
+                  <DetailSection>
+                    <h3>
+                      <FaUsers /> Outras Pessoas Envolvidas
+                    </h3>
+                    {selectedComplaint.peopleList.map((person, index) => (
+                      <DetailField key={index}>
+                        <DetailLabel>Pessoa {index + 1}:</DetailLabel>
+                        <DetailValue>{person}</DetailValue>
+                      </DetailField>
+                    ))}
+                  </DetailSection>
+                )}
+
+              {selectedComplaint.files &&
+                selectedComplaint.files.length > 0 && (
+                  <DetailSection>
+                    <h3>
+                      <MdAttachFile /> Arquivos Anexados
+                    </h3>
+                    {selectedComplaint.files.map((file: FileData, index) => (
+                      <DetailField key={index}>
+                        <DetailLabel>Arquivo {index + 1}:</DetailLabel>
+                        <DetailValue>
+                          {file.name} ({formatFileSize(file.size)})
+                          {file.type.startsWith("image/") && (
+                            <FilePreview>
+                              <img src={file.url} alt={file.name} />
+                            </FilePreview>
+                          )}
+                        </DetailValue>
+                      </DetailField>
+                    ))}
+                  </DetailSection>
+                )}
+            </DetailView>
+          </ComplaintDetailContainer>
+        </ComplaintDetailOverlay>
       )}
-    </div>
+    </PageContainer>
   );
 }
